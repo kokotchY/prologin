@@ -10,7 +10,7 @@ data Number = Decimal Int
     | Binary [Int]
     | Hexa [Char]
     | Octal [Int]
-    deriving Show
+    deriving (Show, Eq)
 
 data Instruction = Nb Number
     | Drop
@@ -20,38 +20,21 @@ data Instruction = Nb Number
     | Min
     | Mul
     | Div
-    deriving Show
-
-data BoolOperation = Less
+    | Less
     | LessEq
     | Greater
     | GreaterEq
     | Equal
     | Different
-    deriving Show
+    deriving (Show, Eq)
 
+execOpNumber :: (Int -> Int -> Int) -> Stack -> Stack
+execOpNumber f (Nb (Decimal a):Nb (Decimal b):xs) = Nb (Decimal (f a b)):xs
 
-
-nbPlus :: Instruction -> Instruction -> Instruction
-nbPlus (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a + b
-nbPlus _ _ = error "Not implemented"
-
-nbMin :: Instruction -> Instruction -> Instruction
-nbMin (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a - b
-nbMin _ _ = error "Not implemented"
-
-nbMul :: Instruction -> Instruction -> Instruction
-nbMul (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a * b
-nbMul _ _ = error "Not implemented"
-
-nbDiv :: Instruction -> Instruction -> Instruction
-nbDiv (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a `div` b
-nbDiv _ _ = error "Not implemented"
-
-execOp :: (Instruction -> Instruction -> Instruction) -> Stack -> Stack
-execOp f (i1:i2:stack) = new_val:stack
-    where
-        new_val = f i1 i2
+execOpBool :: (Int -> Int -> Bool) -> Stack -> Stack
+execOpBool f (Nb (Decimal a):Nb (Decimal b):xs)
+    | f a b = Nb (Decimal 1):xs
+    | otherwise = Nb (Decimal 0):xs
 
 swap :: Stack -> Stack
 swap (x:y:xs) = (y:x:xs)
@@ -68,10 +51,16 @@ eval [] stack = stack
 eval (x:xs) stack =
     case x of
         Nb number -> eval xs $ appendStack stack (Nb $ convertDecimal number)
-        Add -> eval xs $ execOp nbPlus stack
-        Min -> eval xs $ execOp nbMin stack
-        Mul -> eval xs $ execOp nbMul stack
-        Div -> eval xs $ execOp nbDiv stack
+        Add -> eval xs $ execOpNumber (+) stack
+        Min -> eval xs $ execOpNumber (-) stack
+        Mul -> eval xs $ execOpNumber (*) stack
+        Div -> eval xs $ execOpNumber (div) stack
+        Less -> eval xs $ execOpBool (<) stack
+        LessEq -> eval xs $ execOpBool (<=) stack
+        Greater -> eval xs $ execOpBool (>) stack
+        GreaterEq -> eval xs $ execOpBool (>=) stack
+        Equal -> eval xs $ execOpBool (==) stack
+        Different -> eval xs $ execOpBool (/=) stack
         Drop -> eval xs $ tail stack
         Dup -> eval xs (head stack:stack)
         Swap -> eval xs $ swap stack

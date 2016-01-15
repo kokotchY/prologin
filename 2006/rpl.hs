@@ -3,8 +3,8 @@ module Main where
 import Control.Monad
 import Data.Char
 
-type Programme = [Operation]
-type Stack = [Number]
+type Programme = [Instruction]
+type Stack = [Instruction]
 
 data Number = Decimal Int
     | Binary [Int]
@@ -12,7 +12,8 @@ data Number = Decimal Int
     | Octal [Int]
     deriving Show
 
-data Operation = Drop
+data Instruction = Nb Number
+    | Drop
     | Dup
     | Swap
     | Add
@@ -21,8 +22,7 @@ data Operation = Drop
     | Div
     deriving Show
 
-data BoolOperation = BValue Bool
-    | Less
+data BoolOperation = Less
     | LessEq
     | Greater
     | GreaterEq
@@ -32,34 +32,42 @@ data BoolOperation = BValue Bool
 
 
 
-nbPlus :: Number -> Number -> Number
-nbPlus (Decimal a) (Decimal b) = Decimal $ a + b
+nbPlus :: Instruction -> Instruction -> Instruction
+nbPlus (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a + b
 nbPlus _ _ = error "Not implemented"
 
-nbMin :: Number -> Number -> Number
-nbMin (Decimal a) (Decimal b) = Decimal $ a - b
+nbMin :: Instruction -> Instruction -> Instruction
+nbMin (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a - b
 nbMin _ _ = error "Not implemented"
 
-nbMul :: Number -> Number -> Number
-nbMul (Decimal a) (Decimal b) = Decimal $ a * b
+nbMul :: Instruction -> Instruction -> Instruction
+nbMul (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a * b
 nbMul _ _ = error "Not implemented"
 
-nbDiv :: Number -> Number -> Number
-nbDiv (Decimal a) (Decimal b) = Decimal $ a `div` b
+nbDiv :: Instruction -> Instruction -> Instruction
+nbDiv (Nb (Decimal a)) (Nb (Decimal b)) = Nb $ Decimal $ a `div` b
 nbDiv _ _ = error "Not implemented"
 
-execOp :: (Number -> Number -> Number) -> Stack -> Stack
-execOp f (nb1:nb2:stack) = new_val:stack
+execOp :: (Instruction -> Instruction -> Instruction) -> Stack -> Stack
+execOp f (i1:i2:stack) = new_val:stack
     where
-        new_val = f nb1 nb2
+        new_val = f i1 i2
 
 swap :: Stack -> Stack
 swap (x:y:xs) = (y:x:xs)
+
+convertDecimal :: Number -> Number
+convertDecimal (Decimal x) = Decimal x
+convertDecimal _ = error "Not implemented"
+
+appendStack :: Stack -> Instruction -> Stack
+appendStack stack op = op:stack
 
 eval :: Programme -> Stack -> Stack
 eval [] stack = stack
 eval (x:xs) stack =
     case x of
+        Nb number -> eval xs $ appendStack stack (Nb $ convertDecimal number)
         Add -> eval xs $ execOp nbPlus stack
         Min -> eval xs $ execOp nbMin stack
         Mul -> eval xs $ execOp nbMul stack
@@ -70,6 +78,8 @@ eval (x:xs) stack =
 
 prog1 = "1 2 +"
 
+exec :: Programme -> Stack
+exec = flip eval []
 
 main :: IO ()
 main = do

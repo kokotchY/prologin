@@ -65,10 +65,31 @@ eval (x:xs) stack =
         Dup -> eval xs (head stack:stack)
         Swap -> eval xs $ swap stack
 
+prog1 :: String
 prog1 = "1 2 +"
 
 exec :: Programme -> Stack
 exec = flip eval []
+
+test1, test2, test3, test4, test5, test6, test7 :: Bool
+test1 = exec [Nb (Decimal 1), Nb (Decimal 2), Add] == [Nb (Decimal 3)]
+test2 = exec [Nb (Decimal 1), Nb (Decimal 2), Min] == [Nb (Decimal 1)]
+test3 = exec [Nb (Decimal 3), Nb (Decimal 2), Mul] == [Nb (Decimal 6)]
+test4 = exec [Nb (Decimal 2), Nb (Decimal 4), Div] == [Nb (Decimal 2)]
+test5 = exec [Nb (Decimal 1), Nb (Decimal 2), Less] == [Nb (Decimal 0)]
+test6 = exec [Nb (Decimal 2), Nb (Decimal 1), Less] == [Nb (Decimal 1)]
+test7 = exec [Nb (Decimal 2), Nb (Decimal 2), LessEq] == [Nb (Decimal 1)]
+
+testStack1, testStack2, testStack3 :: Bool
+testStack1 = exec [Nb (Decimal 3), Nb (Decimal 4), Drop] == [Nb (Decimal 3)]
+testStack2 = exec [Nb (Decimal 3), Nb (Decimal 4), Dup] == [Nb (Decimal 3), Nb (Decimal 4)]
+testStack3 = exec [Nb (Decimal 3), Nb (Decimal 4), Swap] == [Nb (Decimal 4), Nb (Decimal 3)]
+
+allStackTests :: [Bool]
+allStackTests = [testStack1, testStack2, testStack3]
+
+allTests :: [Bool]
+allTests = [test1, test2, test3, test4, test5, test6, test7]
 
 main :: IO ()
 main = do

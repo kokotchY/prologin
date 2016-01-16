@@ -82,8 +82,8 @@ test7 = exec [Nb (Decimal 2), Nb (Decimal 2), LessEq] == [Nb (Decimal 1)]
 
 testStack1, testStack2, testStack3 :: Bool
 testStack1 = exec [Nb (Decimal 3), Nb (Decimal 4), Drop] == [Nb (Decimal 3)]
-testStack2 = exec [Nb (Decimal 3), Nb (Decimal 4), Dup] == [Nb (Decimal 3), Nb (Decimal 4)]
-testStack3 = exec [Nb (Decimal 3), Nb (Decimal 4), Swap] == [Nb (Decimal 4), Nb (Decimal 3)]
+testStack2 = exec [Nb (Decimal 3), Nb (Decimal 4), Dup] == [Nb (Decimal 4), Nb (Decimal 4), Nb (Decimal 3)]
+testStack3 = exec [Nb (Decimal 3), Nb (Decimal 4), Swap] == [Nb (Decimal 3), Nb (Decimal 4)]
 
 allStackTests :: [Bool]
 allStackTests = [testStack1, testStack2, testStack3]

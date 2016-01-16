@@ -49,6 +49,7 @@ data Instruction = Nb Number
     | AssignVariable VariableName
     | GetVariable VariableName
     | IfThenElse Programme Programme Programme
+    | For VariableName Programme
     deriving (Show, Eq)
 
 execOpNumber :: (Int -> Int -> Int) -> State -> State
@@ -91,6 +92,11 @@ addVariable name state = state { getVariable = variables, getStack = newStack }
         stack = getStack state
         newStack = tail stack
 
+addVariableWithValue :: VariableName -> Instruction -> State -> State
+addVariableWithValue name value state = state { getVariable = variables }
+    where
+        variables = Map.insert name value (getVariable state)
+
 appendVariableStack :: String -> State -> State
 appendVariableStack name state = state { getStack = newStack }
     where
@@ -107,14 +113,29 @@ popStack state = (instr, newState)
         newState = state { getStack = tail stack }
 
 executeIfThenElse :: Programme -> Programme -> Programme -> State -> State
-executeIfThenElse condProg progTrue progFalse state = newState { debugInfo = newInfo }
+executeIfThenElse condProg progTrue progFalse state = newState
     where
         stateCondProg = eval condProg state
         (result, tmpState) = popStack stateCondProg
         newState = case result of
             Nb (Decimal 1) -> eval progTrue tmpState
             Nb (Decimal 0) -> eval progFalse tmpState
-        newInfo = (show result) : (show newState): debugInfo newState
+
+range :: Instruction -> Instruction -> [Instruction]
+range start end = map (Nb . Decimal) [s..e]
+    where
+        s = case start of
+            Nb (Decimal x) -> x
+        e = case end of
+            Nb (Decimal x) -> x
+
+executeFor :: VariableName -> Programme -> State -> State
+executeFor iterVariable loopProg state = newState
+    where
+        (endRange, state1) = popStack state
+        (startRange, state2) = popStack state1
+        numbers = range startRange endRange
+        newState = foldl' (\s nb -> eval loopProg (addVariableWithValue iterVariable nb s)) state2 numbers
 
 eval :: Programme -> State -> State
 eval [] state = state
@@ -143,6 +164,7 @@ eval (x:xs) state =
         AssignVariable name -> eval xs $ addVariable name state
         GetVariable name -> eval xs $ appendVariableStack name state
         IfThenElse condProg progTrue progFalse -> eval xs $ executeIfThenElse condProg progTrue progFalse state
+        For name loopProg -> eval xs $ executeFor name loopProg state
 
 prog1 :: String
 prog1 = "1 2 +"
@@ -169,6 +191,13 @@ testStack1, testStack2, testStack3 :: Bool
 testStack1 = execStack [Nb (Decimal 3), Nb (Decimal 4), StackOp Drop] == [Nb (Decimal 3)]
 testStack2 = execStack [Nb (Decimal 3), Nb (Decimal 4), StackOp Dup] == [Nb (Decimal 4), Nb (Decimal 4), Nb (Decimal 3)]
 testStack3 = execStack [Nb (Decimal 3), Nb (Decimal 4), StackOp Swap] == [Nb (Decimal 3), Nb (Decimal 4)]
+
+
+prog2 :: String
+prog2 = "0 -> c 1 10 for i c 1 + -> c next c"
+
+prog2Prog :: Programme
+prog2Prog = [Nb (Decimal 0), AssignVariable "c", Nb (Decimal 1), Nb (Decimal 10), For "i" [GetVariable "c" , Nb (Decimal 1) , NumberOp Add , AssignVariable "c" ], GetVariable "c" ]
 
 allStackTests :: [Bool]
 allStackTests = [testStack1, testStack2, testStack3]

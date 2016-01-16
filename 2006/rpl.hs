@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad
 import Data.Char
+import Data.List
 
 type Programme = [Instruction]
 type Stack = [Instruction]
@@ -50,6 +51,7 @@ swap (x:y:xs) = (y:x:xs)
 
 convertDecimal :: Number -> Number
 convertDecimal (Decimal x) = Decimal x
+convertDecimal (Binary x) = Decimal $ foldl' (\x y -> x*2+y) 0 x
 convertDecimal _ = error "Not implemented"
 
 appendStack :: Stack -> Instruction -> Stack

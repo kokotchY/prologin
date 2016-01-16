@@ -1,9 +1,10 @@
 module Main where
 
 import Control.Monad
+import Data.List
 
-gravity :: [[String]] -> [[String]]
-gravity list = 
+gravity :: [[Char]] -> [[Char]]
+gravity = transpose . map ((\(x,y) -> y ++ x) . partition (/='.')) . transpose
 
 main :: IO ()
 main = do
@@ -12,4 +13,4 @@ main = do
         l = params !! 0
         c = params !! 1
     grid <- replicateM l getLine
-
+    mapM_ putStrLn $ gravity grid

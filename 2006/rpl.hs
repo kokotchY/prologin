@@ -13,6 +13,7 @@ type VariableName = String
 data State = State
     { getStack :: Stack
     , getVariable :: Variables
+    , debugInfo :: [String]
     }
     deriving Show
 
@@ -47,6 +48,7 @@ data Instruction = Nb Number
     | BoolOp BOperation
     | AssignVariable VariableName
     | GetVariable VariableName
+    | IfThenElse Programme Programme Programme
     deriving (Show, Eq)
 
 execOpNumber :: (Int -> Int -> Int) -> State -> State
@@ -97,6 +99,23 @@ appendVariableStack name state = state { getStack = newStack }
             Just value -> value
         newStack = variableValue:stack
 
+popStack :: State -> (Instruction, State)
+popStack state = (instr, newState)
+    where
+        stack = getStack state
+        instr = head stack
+        newState = state { getStack = tail stack }
+
+executeIfThenElse :: Programme -> Programme -> Programme -> State -> State
+executeIfThenElse condProg progTrue progFalse state = newState { debugInfo = newInfo }
+    where
+        stateCondProg = eval condProg state
+        (result, tmpState) = popStack stateCondProg
+        newState = case result of
+            Nb (Decimal 1) -> eval progTrue tmpState
+            Nb (Decimal 0) -> eval progFalse tmpState
+        newInfo = (show result) : (show newState): debugInfo newState
+
 eval :: Programme -> State -> State
 eval [] state = state
 eval (x:xs) state =
@@ -123,12 +142,13 @@ eval (x:xs) state =
                 Swap -> eval xs $ state { getStack = swap (getStack state) }
         AssignVariable name -> eval xs $ addVariable name state
         GetVariable name -> eval xs $ appendVariableStack name state
+        IfThenElse condProg progTrue progFalse -> eval xs $ executeIfThenElse condProg progTrue progFalse state
 
 prog1 :: String
 prog1 = "1 2 +"
 
 exec :: Programme -> State
-exec = flip eval $ State [] Map.empty
+exec = flip eval $ State [] Map.empty []
 
 execStack :: Programme -> Stack
 execStack = getStack . exec

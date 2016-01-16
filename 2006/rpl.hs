@@ -50,6 +50,7 @@ data Instruction = Nb Number
     | GetVariable VariableName
     | IfThenElse Programme Programme Programme
     | For VariableName Programme
+    | Unknown String
     deriving (Show, Eq)
 
 execOpNumber :: (Int -> Int -> Int) -> State -> State
@@ -198,6 +199,157 @@ prog2 = "0 -> c 1 10 for i c 1 + -> c next c"
 
 prog2Prog :: Programme
 prog2Prog = [Nb (Decimal 0), AssignVariable "c", Nb (Decimal 1), Nb (Decimal 10), For "i" [GetVariable "c" , Nb (Decimal 1) , NumberOp Add , AssignVariable "c" ], GetVariable "c" ]
+
+parse :: String -> Programme
+parse prog = fst $ parse' (words prog)
+
+readMaybe :: (Read a) => String -> Maybe a
+readMaybe s = case reads s of
+    [(x, "")] -> Just x
+    _ -> Nothing
+
+parseDecimal :: String -> Maybe Number
+parseDecimal nb = case readMaybe nb of
+    Just value -> Just $ Decimal value
+    _ -> Nothing
+
+parseBinary :: String -> Maybe Number
+parseBinary str
+    | and (map (`elem` "01") str) = Just $ Binary $ map (read . (:"")) str
+    | otherwise = Nothing
+
+parseOctal :: String -> Maybe Number
+parseOctal str
+    | and (map (`elem` ['0'..'7']) str) = Just $ Octal $ map (read . (:"")) str
+    | otherwise = Nothing
+
+parseHexa :: String -> Maybe Number
+parseHexa str
+    | and (map (`elem` ['0'..'9'] ++ ['a'..'e'] ++ ['A'..'E']) str) = Just $ Hexa str
+    | otherwise = Nothing
+
+parseNumber :: String -> Maybe Number
+parseNumber str = case (last str) of
+    'b' -> parseBinary number
+    'B' -> parseBinary number
+    'o' -> parseOctal number
+    'O' -> parseOctal number
+    'h' -> parseHexa number
+    'H' -> parseHexa number
+    _ -> parseDecimal str
+    where
+        number = init str
+
+tryParseNumber :: String -> Maybe Number
+tryParseNumber str
+    | isDigit (head str) = case parseNumber str of
+            Just nb -> Just nb
+            Nothing -> Nothing
+    | last str `elem` "bBoOhH" = case parseNumber str of
+            Just nb -> Just nb
+            Nothing -> Nothing
+    | otherwise = Nothing
+
+tryParseNumberOperation :: String -> Maybe NOperation
+tryParseNumberOperation (x:[])
+    | x == '+' = Just Add
+    | x == '-' = Just Min
+    | x == '*' = Just Mul
+    | x == '/' = Just Div
+    | otherwise = Nothing
+tryParseNumberOperation _ = Nothing
+
+tryParseBoolOperation :: String -> Maybe BOperation
+tryParseBoolOperation "<" = Just Less
+tryParseBoolOperation "<=" = Just LessEq
+tryParseBoolOperation ">" = Just Greater
+tryParseBoolOperation ">=" = Just GreaterEq
+tryParseBoolOperation "=" = Just Equal
+tryParseBoolOperation "<>" = Just Different
+tryParseBoolOperation _ = Nothing
+
+tryParseStackOperation :: String -> Maybe SOperation
+tryParseStackOperation "DROP" = Just Drop
+tryParseStackOperation "DUP" = Just Dup
+tryParseStackOperation "SWAP" = Just Swap
+tryParseStackOperation _ = Nothing
+
+controlOperation :: [String]
+controlOperation = ["if", "then", "else", "end", "for", "next"]
+
+isCorrectVariableName :: String -> Bool
+isCorrectVariableName = and . map (\x -> x `elem` letters)
+    where
+        letters = lower ++ upper
+        lower = ['a'..'z']
+        upper = ['A'..'Z']
+
+tryParseVariable :: String -> [String] -> Maybe (Instruction, [String])
+tryParseVariable str remain
+    | str == "->" = Just (AssignVariable variableName, remain')
+    | not (str `elem` controlOperation) && isCorrectVariableName str = Just (GetVariable str, remain)
+    | otherwise = Nothing
+    where
+        variableName = head remain
+        remain' = tail remain
+
+getIfCond :: [String] -> ([String], [String])
+getIfCond = getIfCond' 0
+    where
+        getIfCond' :: Int -> [String] -> ([String], [String])
+        getIfCond' level (x:xs)
+            | x == "then" && level == 0 = ([], xs)
+            | otherwise = (x:fst follow, snd follow)
+            where
+                follow = if x == "if"
+                    then getIfCond' (level+1) xs
+                    else if x == "then"
+                        then getIfCond' (level-1) xs
+                        else getIfCond' level xs
+
+getTrueProg :: [String] -> ([String], [String])
+getTrueProg = getTrueProg' 0
+    where
+        getTrueProg' :: Int -> [String] -> ([String], [String])
+        getTrueProg' level (x:xs)
+            | x == "else" && level == 0 = ([], xs)
+            | otherwise = (x:fst follow, snd follow)
+            where
+                follow = if x == "if"
+                    then getTrueProg' (level+1) xs
+                    else if x == "else"
+                        then getTrueProg' (level-1) xs
+                        else getTrueProg' level xs
+
+tryParseIf :: [String] -> Maybe (Instruction, [String])
+tryParseIf remain = Just $ (IfThenElse condProg progTrue progFalse, remain')
+    where
+        (condProg, remain') = parse' remain
+        progTrue = []
+        progFalse = []
+
+tryParseInstr :: String -> [String] -> Maybe (Instruction, [String])
+tryParseInstr str remain
+    | str == "if" = tryParseIf remain
+    | otherwise = Nothing
+
+parse' :: [String] -> (Programme, [String])
+parse' [] = ([], [])
+parse' (x:xs) = (instr:(fst $ parse' remain), remain)
+    where
+        (instr, remain) = case tryParseNumber x of
+            Just number -> (Nb number, xs)
+            Nothing -> case tryParseNumberOperation x of
+                Just op -> (NumberOp op, xs)
+                Nothing -> case tryParseBoolOperation x of
+                    Just op -> (BoolOp op, xs)
+                    Nothing -> case tryParseStackOperation x of
+                        Just op -> (StackOp op, xs)
+                        Nothing -> case tryParseVariable x xs of
+                            Just (instr, remain) -> (instr, remain)
+                            Nothing -> case tryParseInstr x xs of
+                                Just (instr, remain) -> (instr, remain)
+                                Nothing -> (Unknown x, xs)
 
 allStackTests :: [Bool]
 allStackTests = [testStack1, testStack2, testStack3]

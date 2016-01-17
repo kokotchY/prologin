@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Main where
 
 import Control.Monad
@@ -10,6 +11,22 @@ get_parts width list = (map (take half_left) list, map (drop half_right) list)
 
 compare_parts :: ([[Int]], [[Int]]) -> Bool
 compare_parts (left, right) = left == map reverse right
+
+has_symetry :: [[Int]] -> Bool
+has_symetry = all compare_line
+
+compare_line :: [Int] -> Bool
+compare_line list = compare_line' 0 (length list) list
+    where
+        compare_line' :: Int -> Int -> [Int] -> Bool
+        compare_line' idx len list = list !! idx == list !! middle_idx && remain
+            where
+                middle = if even len then len `div` 2 else (len `div` 2) + 1
+                middle_idx = len-idx-1
+                remain = if idx < middle - 1
+                    then compare_line' (idx+1) len list
+                    else True
+
 
 get_first_half :: Int -> [[Int]] -> [[Int]]
 get_first_half width list = map (take half) list
@@ -27,16 +44,22 @@ img = [[0,0,1,1,0,0], [0,1,1,1,1,0], [0,0,1,1,0,0]]
 img2 :: [[Int]]
 img2 = [[0,0,1,1,1,0,0], [0,1,1,1,1,1,0], [0,0,1,1,1,0,0]]
 
+img3 :: [[Int]]
+img3 = [[0,0,1,1,1,0,0], [0,1,1,1,1,1,1], [0,0,1,1,1,0,0]]
+
+img4 :: [[Int]]
+img4 = [[0,0,1,1,0,0], [0,1,1,1,1,0], [0,0,1,1,0,1]]
+
 main :: IO ()
 main = do
     str_n <- getLine
     str_m <- getLine
     let n = read str_n :: Int
         m = read str_m :: Int
-    list <- replicateM n $ do
+    !list <- replicateM n $ do
         line <- getLine
         return $ (map read $ words line :: [Int])
-    if compare_parts (get_parts m list)
+    if has_symetry list
         then putStrLn "1"
         else putStrLn "0"
     return ()

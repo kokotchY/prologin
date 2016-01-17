@@ -22,7 +22,7 @@ main = do
         line <- getLine
         return $ pos_hole line
 
-    if not (any ((==0) . length) $ concatMap (\x -> map (intersect x) list) list)
+    if  (any ((==0) . length) $ concatMap (\x -> map (intersect x) list) list)
         then putStrLn "1"
         else putStrLn "0"
 

@@ -1,10 +1,9 @@
 module Main where
 
 import Data.List
-import Data.List.Split
 
 my_words :: String -> [String]
-my_words = splitOn " "
+my_words = words
 
 main :: IO ()
 main = do

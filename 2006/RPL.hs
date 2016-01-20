@@ -1,4 +1,4 @@
-module Main where
+module RPL  ( execResult, exec, execVariables, execStack, parse) where
 
 import Control.Monad
 import Data.Char
@@ -57,7 +57,11 @@ data Instruction = Nb Number
     | IfThenElse Programme Programme Programme
     | For VariableName Programme
     | Unknown String
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show Instruction where
+    show (Nb number) = show number
+    show _ = "Should not be shown"
 
 execOpNumber :: (Int -> Int -> Int) -> State -> State
 execOpNumber f state = state { getStack = Nb (Decimal (f a b)):remainStack }
@@ -178,6 +182,11 @@ prog1 = "1 2 +"
 
 exec :: Programme -> State
 exec = flip eval $ State [] Map.empty []
+
+execResult :: Programme -> String
+execResult prog = show $ head stack
+    where
+        stack = getStack $ eval prog (State [] Map.empty [])
 
 execStack :: Programme -> Stack
 execStack = getStack . exec

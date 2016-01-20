@@ -336,16 +336,31 @@ getTrueProg = getTrueProg' 0
                         then getTrueProg' (level-1) xs
                         else getTrueProg' level xs
 
+{-tryParseIf :: [String] -> Maybe (Instruction, [String])-}
+{-tryParseIf remain = Just $ (IfThenElse condProg progTrue progFalse, remain')-}
+    {-where-}
+        {-(condProg, remain') = parse' remain-}
+        {-progTrue = []-}
+        {-progFalse = []-}
 tryParseIf :: [String] -> Maybe (Instruction, [String])
-tryParseIf remain = Just $ (IfThenElse condProg progTrue progFalse, remain')
+tryParseIf remain = Just $ (IfThenElse (internal_parse cond) (internal_parse progTrue) (internal_parse progFalse), tail remain''')
     where
-        (condProg, remain') = parse' remain
-        progTrue = []
-        progFalse = []
+        (cond, remain') = span (/= "then") remain
+        (progTrue, remain'') = span (/= "else") $ drop 1 remain'
+        (progFalse, remain''') = span (/= "end") $ drop 1 remain''
+        internal_parse = fst . parse'
+
+tryParseFor :: [String] -> Maybe (Instruction, [String])
+tryParseFor remain = Just $ (For variableName (internal_parse progLoop), tail remain')
+    where
+        variableName = head remain
+        (progLoop, remain') = span (/= "next") $ tail remain
+        internal_parse = fst . parse'
 
 tryParseInstr :: String -> [String] -> Maybe (Instruction, [String])
 tryParseInstr str remain
     | str == "if" = tryParseIf remain
+    | str == "for" = tryParseFor remain
     | otherwise = Nothing
 
 parse' :: [String] -> (Programme, [String])

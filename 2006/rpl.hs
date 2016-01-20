@@ -21,7 +21,13 @@ data Number = Decimal Int
     | Binary [Int]
     | Hexa [Char]
     | Octal [Int]
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show Number where
+    show (Decimal d) = show d
+    show (Binary b) = (concatMap show b) ++ "b"
+    show (Hexa h) = (foldr (:) [] h) ++ "h"
+    show (Octal o) = (concatMap show o) ++ "o"
 
 data SOperation = Drop
     | Dup

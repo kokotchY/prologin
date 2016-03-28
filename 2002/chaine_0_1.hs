@@ -1,41 +1,31 @@
 module Main where
 
 import Control.Monad
+import Data.List
 
 convert :: String -> [Int]
 convert [] = []
 convert (x:xs) = (read (x:[])) : convert xs
 
-convert2 :: [(Int, Int)] -> [Int]
-convert2 = map snd
-
-split :: (a -> Bool) -> [a] -> ([a], [a])
-split f [] = ([],[])
-split f (x:xs)
-    | f x = (x:a, b)
-    | otherwise = (a, x:b)
+calc :: ([Int], [Int]) -> Int
+calc (l1, l2) = v_l1 + v_l2
     where
-        (a, b) = split f xs
+        v_l1 = length $ filter (==1) l1
+        v_l2 = length $ filter (==0) l2
 
-to_count :: Int -> (Int, Int) -> Bool
-to_count idx (pos, value)
-    | pos < idx && value == 1 = True
-    | pos >= idx && value == 0 = True
-    | otherwise = False
-
-calc :: Int -> [Int] -> Int
-calc index = undefined
+solution :: [Int] -> Int
+solution l = fst $ minimumBy (\c1 c2 -> compare (snd c1) (snd c2)) $ map f [0..length l]
+    where
+        f :: Int -> (Int, Int)
+        f = \x -> (x, calc $ splitAt x list)
 
 list :: [Int]
 list = [0,0,1,1,0,1,0,1,1,0,0,0,0,1,0,1,1,0,1,1,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0]
-
-list2 :: [(Int, Int)]
-list2 = zip [0..] list
 
 main :: IO ()
 main = do
     _ <- getLine
     str_list <- getLine
     let list = convert str_list
-    print list
+    print $ solution list
     return ()

@@ -68,6 +68,9 @@ get_grid l c = do
 set_visited :: Pos -> Grid -> Grid
 set_visited = Map.adjust (\c -> c { visited = True })
 
+test_grid :: Grid
+test_grid = Map.fromList [((0,0),C {getX = 0, getY = 0, value = 4, visited = False}),((0,1),C {getX = 0, getY = 1, value = 3, visited = False}),((0,2),C {getX = 0, getY = 2, value = 4, visited = False}),((0,3),C {getX = 0, getY = 3, value = 0, visited = False}),((1,0),C {getX = 1, getY = 0, value = 5, visited = False}),((1,1),C {getX = 1, getY = 1, value = 2, visited = False}),((1,2),C {getX = 1, getY = 2, value = 1, visited = False}),((1,3),C {getX = 1, getY = 3, value = 1, visited = False}),((2,0),C {getX = 2, getY = 0, value = 3, visited = False}),((2,1),C {getX = 2, getY = 1, value = 6, visited = False}),((2,2),C {getX = 2, getY = 2, value = 1, visited = False}),((2,3),C {getX = 2, getY = 3, value = 2, visited = False})]
+
 main :: IO ()
 main = do
     str_params <- getLine

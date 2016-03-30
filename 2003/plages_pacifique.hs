@@ -36,3 +36,6 @@ main = do
     let [w, h] = map read $ words str_params
     grid <- get_grid w h
     return ()
+
+{-Idea: start from the border and mark every water accessible as ocean.-}
+{-Then, look for every cell which is earth touching an ocean cell-}

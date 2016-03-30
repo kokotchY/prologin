@@ -1,6 +1,7 @@
 module Main where
 
 import Control.Monad
+import Data.Foldable (foldl')
 import qualified Data.Map.Strict as Map
 
 type Pos = (Integer, Integer)
@@ -23,7 +24,7 @@ get_accessibles grid pos = result_grid
         (x, y) = get_pos cell
         positions = [(x-1,y),(x+1,y),(x,y-1),(x,y+1)]
         cells = filter (\x -> value x <= get_value cell && not (visited x)) $ get_cells positions modified_grid
-        result_grid = foldl do_visit modified_grid cells
+        result_grid = foldl' do_visit modified_grid cells
 
 do_visit :: Grid -> Cell -> Grid
 do_visit grid cell = get_accessibles grid (get_pos (Just cell))
@@ -37,7 +38,7 @@ get_pos Nothing = (-1,-1)
 get_pos (Just cell) = (getX cell, getY cell)
 
 get_cells :: [Pos] -> Grid -> [Cell]
-get_cells positions grid = get_justs $ foldl (\x y -> x ++ [get_cell grid y]) [] positions
+get_cells positions grid = get_justs $ foldl' (\x y -> x ++ [get_cell grid y]) [] positions
 
 get_justs :: [Maybe Cell] -> [Cell]
 get_justs [] = []

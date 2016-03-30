@@ -15,13 +15,18 @@ data Cell = C
 
 type Grid = Map.Map Pos Cell
 
-get_accessibles :: Grid -> Pos -> [Cell]
-get_accessibles grid pos = cells
+get_accessibles :: Grid -> Pos -> Grid
+get_accessibles grid pos = result_grid
     where
-        cell = get_cell grid pos
+        modified_grid = set_visited pos grid
+        cell = get_cell modified_grid pos
         (x, y) = get_pos cell
         positions = [(x-1,y),(x+1,y),(x,y-1),(x,y+1)]
-        cells = filter (\x -> value x <= get_value cell) $ get_cells positions grid
+        cells = filter (\x -> value x <= get_value cell && not (visited x)) $ get_cells positions modified_grid
+        result_grid = foldl do_visit modified_grid cells
+
+do_visit :: Grid -> Cell -> Grid
+do_visit grid cell = get_accessibles grid (get_pos (Just cell))
 
 get_value :: Maybe Cell -> Integer
 get_value Nothing = -999999
@@ -67,5 +72,5 @@ main = do
     str_params <- getLine
     let [l, c] = map read $ words str_params :: [Integer]
     grid <- get_grid l c
-    print $ get_accessibles grid (0,0)
+    print $ Map.size $ Map.filter (not.visited) $ get_accessibles grid (0,0)
     return ()

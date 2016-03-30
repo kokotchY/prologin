@@ -1,6 +1,7 @@
 module Main where
 
 import Control.Monad
+import qualified Data.Map.Strict as Map
 
 type Pos = (Integer, Integer)
 
@@ -12,7 +13,7 @@ data Cell = C
     }
     deriving Show
 
-type Grid = [(Pos, Cell)]
+type Grid = Map.Map Pos Cell
 
 get_accessibles :: Grid -> Pos -> [Cell]
 get_accessibles grid pos = cells
@@ -38,17 +39,18 @@ get_justs [] = []
 get_justs (Nothing:xs) = get_justs xs
 get_justs (Just cell:xs) = cell:get_justs xs
 
-
 get_cell :: Grid -> Pos -> Maybe Cell
-get_cell grid pos = lookup pos grid
+get_cell grid pos = Map.lookup pos grid
 
 create_cell :: Integer -> (Integer, Integer) -> (Pos, Cell)
 create_cell y (x,v) = ((x,y), C x y v False)
 
 get_grid :: Integer -> Integer -> IO Grid
-get_grid l c = get_grid' l c 0
+get_grid l c = do
+    grid <- get_grid' l c 0
+    return $ Map.fromList grid
     where
-        get_grid' :: Integer -> Integer -> Integer -> IO Grid
+        get_grid' :: Integer -> Integer -> Integer -> IO [(Pos,Cell)]
         get_grid' l c idx
             | l == idx = return []
             | otherwise = do
@@ -56,6 +58,9 @@ get_grid l c = get_grid' l c 0
                 let nb = zip [0..] (map read $ words line :: [Integer])
                 elements <- get_grid' l c (idx+1)
                 return $ (map (create_cell idx) nb) ++ elements
+
+set_visited :: Pos -> Grid -> Grid
+set_visited = Map.adjust (\c -> c { visited = True })
 
 main :: IO ()
 main = do

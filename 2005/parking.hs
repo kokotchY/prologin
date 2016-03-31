@@ -14,11 +14,7 @@ data Cell = C
 
 type Pos = (Integer,Integer)
 
-data Grid = G
-    { get_parking :: Map.Map Pos Cell
-    , free_space :: Integer
-    }
-    deriving Show
+type Grid = Map.Map Pos Cell
 
 create_cell :: Integer -> (Integer, Char) -> (Pos, Cell)
 create_cell y (x, c) = ((x,y), C x y v False)
@@ -30,12 +26,12 @@ get_grid w h = get_grid' w h 0
     where
         get_grid' :: Integer -> Integer -> Integer -> IO Grid
         get_grid' w h idx
-            | idx == h = return $ G (Map.fromList []) 0
+            | idx == h = return $ Map.fromList []
             | otherwise = do
                 line <- getLine
                 others <- get_grid' w h (idx+1)
                 let list = zip [0..] line
-                return $ G (Map.union (fromList (Prelude.map (create_cell idx) list)) (get_parking others)) 0
+                return $ Map.union (fromList (Prelude.map (create_cell idx) list)) others
 
 count_places :: Grid -> Pos -> Grid
 count_places grid pos = grid''
@@ -71,21 +67,21 @@ get_cells :: [Pos] -> Grid -> [Cell]
 get_cells positions grid = Prelude.map fromJust $ Prelude.filter isJust $ Prelude.map (get_cell grid) positions
 
 get_cell :: Grid -> Pos -> Maybe Cell
-get_cell grid pos = Map.lookup pos (get_parking grid)
+get_cell grid pos = Map.lookup pos grid
 
 get_cell' :: Grid -> Pos -> Cell
 get_cell' grid pos =
-    case Map.lookup pos (get_parking grid) of
+    case Map.lookup pos grid of
         Just cell -> cell
         Nothing -> fakeCell
 
 mark_visited :: Grid -> Pos -> Grid
-mark_visited grid pos = grid { get_parking = parking }
+mark_visited grid pos = parking
     where
-        parking = Map.adjust (\x -> x { visited = True }) pos (get_parking grid)
+        parking = Map.adjust (\x -> x { visited = True }) pos grid
 
 nb_free_parking :: Grid -> Int
-nb_free_parking = Map.size . Map.filter valid_parking . get_parking . flip count_places (0,0)
+nb_free_parking = Map.size . Map.filter valid_parking . flip count_places (0,0)
 
 main :: IO ()
 main = do

@@ -1,4 +1,4 @@
-module Main where
+module RPL  ( execResult, exec, execVariables, execStack, parse) where
 
 import Control.Monad
 import Data.Char
@@ -21,7 +21,13 @@ data Number = Decimal Int
     | Binary [Int]
     | Hexa [Char]
     | Octal [Int]
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show Number where
+    show (Decimal d) = show d
+    show (Binary b) = (concatMap show b) ++ "b"
+    show (Hexa h) = (foldr (:) [] h) ++ "h"
+    show (Octal o) = (concatMap show o) ++ "o"
 
 data SOperation = Drop
     | Dup
@@ -51,7 +57,11 @@ data Instruction = Nb Number
     | IfThenElse Programme Programme Programme
     | For VariableName Programme
     | Unknown String
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show Instruction where
+    show (Nb number) = show number
+    show _ = "Should not be shown"
 
 execOpNumber :: (Int -> Int -> Int) -> State -> State
 execOpNumber f state = state { getStack = Nb (Decimal (f a b)):remainStack }
@@ -172,6 +182,11 @@ prog1 = "1 2 +"
 
 exec :: Programme -> State
 exec = flip eval $ State [] Map.empty []
+
+execResult :: Programme -> String
+execResult prog = show $ head stack
+    where
+        stack = getStack $ eval prog (State [] Map.empty [])
 
 execStack :: Programme -> Stack
 execStack = getStack . exec
@@ -321,16 +336,31 @@ getTrueProg = getTrueProg' 0
                         then getTrueProg' (level-1) xs
                         else getTrueProg' level xs
 
+{-tryParseIf :: [String] -> Maybe (Instruction, [String])-}
+{-tryParseIf remain = Just $ (IfThenElse condProg progTrue progFalse, remain')-}
+    {-where-}
+        {-(condProg, remain') = parse' remain-}
+        {-progTrue = []-}
+        {-progFalse = []-}
 tryParseIf :: [String] -> Maybe (Instruction, [String])
-tryParseIf remain = Just $ (IfThenElse condProg progTrue progFalse, remain')
+tryParseIf remain = Just $ (IfThenElse (internal_parse cond) (internal_parse progTrue) (internal_parse progFalse), tail remain''')
     where
-        (condProg, remain') = parse' remain
-        progTrue = []
-        progFalse = []
+        (cond, remain') = span (/= "then") remain
+        (progTrue, remain'') = span (/= "else") $ drop 1 remain'
+        (progFalse, remain''') = span (/= "end") $ drop 1 remain''
+        internal_parse = fst . parse'
+
+tryParseFor :: [String] -> Maybe (Instruction, [String])
+tryParseFor remain = Just $ (For variableName (internal_parse progLoop), tail remain')
+    where
+        variableName = head remain
+        (progLoop, remain') = span (/= "next") $ tail remain
+        internal_parse = fst . parse'
 
 tryParseInstr :: String -> [String] -> Maybe (Instruction, [String])
 tryParseInstr str remain
     | str == "if" = tryParseIf remain
+    | str == "for" = tryParseFor remain
     | otherwise = Nothing
 
 parse' :: [String] -> (Programme, [String])

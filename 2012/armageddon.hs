@@ -1,34 +1,24 @@
 module Main where
 
 import Control.Monad
+import qualified Data.Map.Strict as Map
 
-type Grid = [[Int]]
+type Pos = (Integer, Integer)
+type Grid = Map.Map Pos Integer
 
-is_safe_detonate :: (Int, Int) -> (Int, Int) -> Grid -> Bool
-is_safe_detonate (bx,by) (px,py) grid = undefined
+bla1 :: [[Integer]] -> [(Integer, [(Integer, Integer)])]
+bla1 = zip [0..] . map (zip [0..])
 
-detonate_bomb :: (Int, Int) -> Grid -> (Grid, [(Int, Int)])
-detonate_bomb (bx, by) grid = undefined
-    where
-        touch_bomb = filter ((>0) . flip get_bomb_radius grid) $ affected_cell (bx,by) radius
-        radius = get_bomb_radius (bx,by) grid
+bla2 :: (Integer, [(Integer, Integer)]) -> _
+bla2 list = map (\(y,l) -> bla3 y l) list
 
-affected_cell :: (Int, Int) -> Int -> [(Int,Int)]
-affected_cell (bx,by) r = along_x ++ along_y
-    where
-        along_x = [(x,y) | x <- [(bx-r)..(bx+r)], y <- [by], not (x == bx && y == by)]
-        along_y = [(x,y) | x <- [bx], y <- [(by-r)..(by+r)], not (x == bx && y == by)]
+bla3 :: Integer -> [(Integer, Integer)] -> [((Integer, Integer), Integer)]
+bla3 y l = map (\(x,v) -> ((x,y),v)) l
 
-get_bomb_radius :: (Int, Int) -> Grid -> Int
-get_bomb_radius (bx,by) grid = value
-    where
-        value = if bound_x && bound_y
-            then grid !! by !! bx
-            else 0
-        bound_y = by >= 0 && by < (length grid)
-        bound_x = bx >= 0 && bx < (length $ head grid)
+parse_grid :: [[Integer]] -> Grid
+parse_grid = undefined
 
-grid :: Grid
+grid :: [[Integer]]
 grid = [[0,0,0],[0,4,0],[0,0,0]]
 
 main :: IO ()

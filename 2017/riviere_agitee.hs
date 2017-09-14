@@ -16,9 +16,10 @@ reach_start rivers pos
     where
         src = map fst $ filter ((==) pos . snd) rivers
 
-data1, data2 :: [(Pos, Pos)]
+data1, data2, data3 :: [(Pos, Pos)]
 data1 = [((0,0),(1,1)), ((1,1),(0,0))]
 data2 = [((1,5),(3,6)),((0,0),(2,2)),((2,2),(1,5))]
+data3 = [((0,0),(1,1)),((1,1),(1,2)),((1,2),(2,2)),((2,2),(2,1)),((2,1),(1,1)),((2,2),(3,3))]
 
 main :: IO ()
 main = do

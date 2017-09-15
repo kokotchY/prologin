@@ -4,28 +4,30 @@ import Control.Monad
 import Data.List
 
 convert :: String -> [Int]
-convert [] = []
-convert (x:xs) = (read (x:[])) : convert xs
+convert = map (read . (flip (:) ""))
 
-calc :: ([Int], [Int]) -> Int
-calc (l1, l2) = v_l1 + v_l2
+count :: (Int -> Bool) -> [Int] -> Int
+count _ [] = 0
+count f (x:xs) = v + count f xs
     where
-        v_l1 = length $ filter (==1) l1
-        v_l2 = length $ filter (==0) l2
+        v = if f x
+            then 1
+            else 0
 
-solution :: [Int] -> Int
-solution l = fst $ minimumBy (\c1 c2 -> compare (snd c1) (snd c2)) $ map f [0..length l]
-    where
-        f :: Int -> (Int, Int)
-        f = \x -> (x, calc $ splitAt x list)
+calc :: ([Int],[Int]) -> Int
+calc (left, right) = count (==1) left + count (==0) right
 
-list :: [Int]
-list = [0,0,1,1,0,1,0,1,1,0,0,0,0,1,0,1,1,0,1,1,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0]
+min_sum :: (Int,Int) -> (Int,Int) -> Ordering
+min_sum c1 c2 = compare (snd c1) (snd c2)
+
+data1 :: [Int]
+data1 = convert "001101011000010110110011101001101010101010"
 
 main :: IO ()
 main = do
     _ <- getLine
-    str_list <- getLine
-    let list = convert str_list
-    print $ solution list
+    list <- liftM (map (read . (flip (:) ""))) getLine :: IO [Int]
+    let all_pos = [0..length data1]
+        solution = minimumBy min_sum $ map (\p -> (p, calc $ splitAt p list)) all_pos
+    print $ fst solution
     return ()
